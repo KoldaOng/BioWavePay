@@ -1,0 +1,1418 @@
+import 'package:flutter/material.dart';
+
+void main() => runApp(ESGApp());
+
+class ESGApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'BioWavePay',
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+      ),
+      home: ConsumerHomeScreen(),
+    );
+  }
+}
+
+class ConsumerHomeScreen extends StatefulWidget {
+  @override
+  _ConsumerHomeScreenState createState() => _ConsumerHomeScreenState();
+}
+
+class _ConsumerHomeScreenState extends State<ConsumerHomeScreen> {
+  int _selectedIndex = 0;
+  final String userName = 'Sean';
+  final String userTier = '🌳 Eco Explorer';
+  final List<String> languages = ['English', 'Chinese', 'Malay'];
+  String selectedLanguage = 'English';
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(65),
+        child: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 2,
+          automaticallyImplyLeading: false,
+          title: Row(
+            children: [
+              // LEFT: Profile Info
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Icon(Icons.account_circle, color: Colors.green, size: 34),
+                    SizedBox(width: 6),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          userName,
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
+                        ),
+                        Text(
+                          userTier,
+                          style: TextStyle(
+                            color: Colors.green[700],
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // CENTER: App Name
+              Expanded(
+                child: Center(
+                  child: Text(
+                    "BioWavePay",
+                    style: TextStyle(
+                      color: Colors.green[800],
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+              ),
+              // RIGHT: Hamburger Popup Menu
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    PopupMenuButton<String>(
+                      icon: Icon(Icons.menu, color: Colors.green[700]),
+                      onSelected: (value) async {
+                        if (value == 'profile') {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Profile Setting selected!'),
+                            ),
+                          );
+                        } else if (value == 'signout') {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Sign out tapped!')),
+                          );
+                        } else if (value == 'language') {
+                          String? lang = await showDialog<String>(
+                            context: context,
+                            builder: (context) => SimpleDialog(
+                              title: Text('Choose Language'),
+                              children: languages.map((lang) {
+                                return SimpleDialogOption(
+                                  onPressed: () => Navigator.pop(context, lang),
+                                  child: Text(
+                                    lang,
+                                    style: TextStyle(
+                                      color: lang == selectedLanguage
+                                          ? Colors.green
+                                          : Colors.black,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          );
+                          if (lang != null && lang != selectedLanguage) {
+                            setState(() {
+                              selectedLanguage = lang;
+                            });
+                          }
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'profile',
+                          child: Row(
+                            children: [
+                              Icon(Icons.settings, color: Colors.grey[700]),
+                              SizedBox(width: 8),
+                              Text('Profile Setting'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'language',
+                          child: Row(
+                            children: [
+                              Icon(Icons.language, color: Colors.grey[700]),
+                              SizedBox(width: 8),
+                              Text('Language'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'signout',
+                          child: Row(
+                            children: [
+                              Icon(Icons.logout, color: Colors.grey[700]),
+                              SizedBox(width: 8),
+                              Text('Sign Out'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(width: 4),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          centerTitle: true,
+        ),
+      ),
+      body: _getSelectedPage(_selectedIndex),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.green,
+        unselectedItemColor: Colors.grey,
+        onTap: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Homepage'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.store_mall_directory),
+            label: 'Marketplace',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.account_balance_wallet),
+            label: 'Finance',
+          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+        ],
+      ),
+    );
+  }
+
+  Widget _getSelectedPage(int index) {
+    switch (index) {
+      case 0:
+        return ListView(
+          children: [
+            _walletHeader(),
+            _bannerCarousel(),
+            _quickActions(context),
+            _highlightedEcoMerchants(),
+            _ecoFunFact(),
+            _nearbyEcoMerchants(),
+            _recentTransactions(),
+          ],
+        );
+      case 1:
+        return marketplacePage(context); // Pass context here
+      case 2:
+        return financePage(context); // Pass context here
+      case 3:
+        return _profileSection();
+      default:
+        return _rewardsPage();
+    }
+  }
+
+  Widget _walletHeader() {
+    return Card(
+      margin: EdgeInsets.all(12),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Wallet Balance', style: TextStyle(color: Colors.grey)),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'RM 123.45',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {},
+                  icon: Icon(Icons.add),
+                  label: Text('Top Up'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[100],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.eco, color: Colors.green),
+                SizedBox(width: 6),
+                Text('EcoScore: 78'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bannerCarousel() {
+    return Container(
+      height: 120,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          _promoCard('Join our Tree Planting Challenge!'),
+          _promoCard('Get 2x Rewards at Eco Merchants'),
+          _promoCard('Donate RM1 to plant a tree 🌳'),
+        ],
+      ),
+    );
+  }
+
+  Widget _promoCard(String title) {
+    return Container(
+      width: 280,
+      margin: EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.green[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      padding: EdgeInsets.all(16),
+      child: Center(
+        child: Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _quickActions(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: GridView.count(
+        crossAxisCount: 4,
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        children: [
+          _quickActionItem(
+            context,
+            Icons.qr_code_scanner,
+            'Scan',
+            () => _scanPage(context),
+          ),
+          _quickActionItem(
+            context,
+            Icons.attach_money,
+            'Receive',
+            _receivePage,
+          ),
+          _quickActionItem(context, Icons.redeem, 'Rewards', _rewardsPage),
+          _quickActionItem(context, Icons.bar_chart, 'Impact', _impactPage),
+        ],
+      ),
+    );
+  }
+
+  Widget _quickActionItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    Widget Function() targetPage,
+  ) {
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => targetPage()),
+      ),
+      child: Column(
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.green.shade100,
+            child: Icon(icon, color: Colors.green),
+          ),
+          SizedBox(height: 8),
+          Text(label),
+        ],
+      ),
+    );
+  }
+
+  Widget _highlightedEcoMerchants() {
+    return Column(
+      children: [
+        _highlightCard('ABC EcoMart', 'Top-rated merchant this week! 🌿'),
+        _highlightCard('Green Bites', 'Rated 4.9 by locals'),
+        _highlightCard('Earthly Goods', 'Sells zero-waste products'),
+      ],
+    );
+  }
+
+  Widget _highlightCard(String name, String desc) {
+    return Card(
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      color: Colors.green[50],
+      child: ListTile(
+        leading: Icon(Icons.star, color: Colors.green, size: 32),
+        title: Text(name),
+        subtitle: Text(desc),
+        trailing: ElevatedButton(
+          onPressed: () {},
+          child: Text('Visit'),
+          style: ElevatedButton.styleFrom(backgroundColor: Colors.green[100]),
+        ),
+      ),
+    );
+  }
+
+  Widget _ecoFunFact() {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.lightGreen[100],
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.lightbulb_outline, color: Colors.green),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Did you know? Buying local can reduce carbon emissions by up to 50%!',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _nearbyEcoMerchants() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Text(
+            'Nearby Eco Merchants',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ),
+        ListTile(
+          leading: Icon(Icons.store, color: Colors.green),
+          title: Text('ABC Café (0.3km)'),
+          subtitle: Text('🌿 Eco Certified • 1.2kg CO₂ saved'),
+          trailing: Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: () {},
+        ),
+        ListTile(
+          leading: Icon(Icons.store, color: Colors.green),
+          title: Text('LocalGro (0.5km)'),
+          subtitle: Text('🌿 Compostable Packaging'),
+          trailing: Icon(Icons.arrow_forward_ios, size: 16),
+          onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _recentTransactions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Text(
+            'Recent Transactions',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+        ),
+        ListTile(
+          leading: Icon(Icons.fastfood, color: Colors.orange),
+          title: Text('ABC Café'),
+          subtitle: Text('RM20 • 1.2kg CO₂'),
+          trailing: Icon(Icons.check_circle, color: Colors.green),
+        ),
+        ListTile(
+          leading: Icon(Icons.shopping_cart, color: Colors.blue),
+          title: Text('EcoMart'),
+          subtitle: Text('RM35 • 0.8kg CO₂'),
+          trailing: Icon(Icons.check_circle, color: Colors.green),
+        ),
+      ],
+    );
+  }
+
+  // UPDATED SCAN PAGE
+  Widget _scanPage(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Scan QR')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.green, width: 3),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(child: Text('Scanner Frame')),
+            ),
+            SizedBox(height: 28),
+            ElevatedButton(
+              onPressed: () {},
+              child: Text('Scan from Gallery'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green[400],
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            SizedBox(height: 24),
+            TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => scanResultPage()),
+              ),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.green.withOpacity(0.3),
+                foregroundColor: Colors.green[900],
+                padding: EdgeInsets.symmetric(horizontal: 36, vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: Text(
+                'Successful Scan',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget scanResultPage() {
+    return Scaffold(
+      appBar: AppBar(title: Text('Scan Result')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Payment successful',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.green[800],
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'You have earned 134 Eco Points.',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.green[700],
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'This EcoProduct offset 1.2kg of CO2 emissions.',
+              style: TextStyle(fontSize: 16, color: Colors.green[600]),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _receivePage() => Scaffold(
+        appBar: AppBar(title: Text('Receive Payment')),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [Icon(Icons.qr_code, size: 150), Text('User ID: SEAN123')],
+          ),
+        ),
+      );
+
+  // --- FINANCE/REWARDS PAGE ---
+  Widget _rewardsPage() => Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 1,
+          title: Text('Rewards', style: TextStyle(color: Colors.green[700])),
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Colors.green[700]),
+        ),
+        body: ListView(
+          padding: EdgeInsets.all(16),
+          children: [
+            Card(
+              color: Colors.green[50],
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Eco Points: 240',
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'RM1 = 2 points',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Claim at These Merchants',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            _merchantBanner('Green Bites', '10% Off with 100 Points'),
+            _merchantBanner('Eco Fashion', 'RM5 Off with 50 Points'),
+            SizedBox(height: 16),
+            Text(
+              'Earn Bonus Points with Our Partners',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            SizedBox(
+              height: 120,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _partnerCard('EcoShoes'),
+                  _partnerCard('CleanGreen'),
+                  _partnerCard('LocalGoodz'),
+                  _partnerCard('Plantify'),
+                  _partnerCard('ZeroWaste Co'),
+                ],
+              ),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'You can also spend your points on EcoMerch!',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            _ecoMerchBanner('Eco Tote Bag', '150 Points'),
+            _ecoMerchBanner('Bamboo Cutlery Set', '200 Points'),
+          ],
+        ),
+      );
+
+  Widget _merchantBanner(String name, String offer) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.green[100],
+        borderRadius: BorderRadius.circular(10),
+        image: DecorationImage(
+          image: NetworkImage(
+              'https://www.gstatic.com/flutter-onestack-prototype/genui/example_1.jpg'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.green.withAlpha((0.2 * 255).toInt()),
+            BlendMode.dstATop,
+          ),
+        ),
+      ),
+      padding: EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                name,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(offer),
+            ],
+          ),
+          ElevatedButton(onPressed: () {}, child: Text('Redeem')),
+        ],
+      ),
+    );
+  }
+
+  Widget _ecoMerchBanner(String item, String points) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.lightGreen[100],
+        borderRadius: BorderRadius.circular(10),
+        image: DecorationImage(
+          image: NetworkImage(
+              'https://www.gstatic.com/flutter-onestack-prototype/genui/example_1.jpg'),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(
+            Colors.green.withAlpha((0.3 * 255).toInt()),
+            BlendMode.dstATop,
+          ),
+        ),
+      ),
+      padding: EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                item,
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              Text(points),
+            ],
+          ),
+          ElevatedButton(onPressed: () {}, child: Text('Redeem')),
+        ],
+      ),
+    );
+  }
+
+  Widget _partnerCard(String name) {
+    return Container(
+      width: 120,
+      margin: EdgeInsets.only(right: 12),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.green[100],
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Center(
+        child: Text(name, style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget _impactPage() => Scaffold(
+        appBar: AppBar(title: Text('Impact Dashboard')),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: ListView(
+            children: [
+              Text(
+                'My EcoImpact',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  DropdownButton<String>(
+                    value: 'July',
+                    items: ['June', 'July', 'August']
+                        .map<DropdownMenuItem<String>>(
+                          (month) =>
+                              DropdownMenuItem<String>(value: month, child: Text(month)),
+                        )
+                        .toList(),
+                    onChanged: (_) {},
+                  ),
+                  DropdownButton<String>(
+                    value: '2025',
+                    items: ['2024', '2025']
+                        .map<DropdownMenuItem<String>>(
+                          (year) =>
+                              DropdownMenuItem<String>(value: year, child: Text(year)),
+                        )
+                        .toList(),
+                    onChanged: (_) {},
+                  ),
+                ],
+              ),
+              SizedBox(height: 16),
+              Card(
+                color: Colors.lightGreen[100],
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Text(
+                    'CO₂ Offset by Category:\n- Food & Beverages: 35%\n- Transport: 25%\n- Shopping: 20%\n- Bills: 10%\n- Others: 10%',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+}
+
+Widget marketplacePage(BuildContext context) {
+  final List<String> categories = ['EcoMart', 'Secondhand', 'Handcrafted'];
+
+  final List<Map<String, dynamic>> orders = [
+    {
+      'item': 'Bamboo Toothbrush',
+      'orderId': 'ORD12345',
+      'merchant': 'Green Bites',
+      'quantity': 2,
+      'status': 'Delivered',
+    },
+    {
+      'item': 'Reusable Straw Set',
+      'orderId': 'ORD12346',
+      'merchant': 'EcoMart',
+      'quantity': 1,
+      'status': 'Shipped',
+    },
+    {
+      'item': 'Vintage Shirt',
+      'orderId': 'ORD12347',
+      'merchant': 'ThriftWear',
+      'quantity': 1,
+      'status': 'Processing',
+    },
+  ];
+
+  return Scaffold(
+    appBar: AppBar(
+      backgroundColor: Colors.white,
+      elevation: 1,
+      title: Text('Marketplace', style: TextStyle(color: Colors.green[700])),
+      centerTitle: true,
+      iconTheme: IconThemeData(color: Colors.green),
+    ),
+    body: ListView(
+      padding: EdgeInsets.all(16),
+      children: [
+        Text(
+          'Merchant Categories',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: categories.map<Widget>((category) {
+            return GestureDetector(
+              onTap: () {
+                if (category == 'EcoMart') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute<void>(builder: (BuildContext context) => EcoMartDetailsPage()),
+                  );
+                }
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.green[100],
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  category,
+                  style: TextStyle(
+                    color: Colors.green[800],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        SizedBox(height: 24),
+        Text(
+          'Order History',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 8),
+        ...orders.map<Widget>((Map<String, dynamic> order) {
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 8),
+            child: ListTile(
+              title: Text(
+                order['item'] as String,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Order ID: ${order['orderId'] as String}'),
+                  Text('Merchant: ${order['merchant'] as String}'),
+                  Text('Quantity: ${order['quantity'] as int}'),
+                  Text(
+                    'Status: ${order['status'] as String}',
+                    style: TextStyle(
+                      color: (order['status'] as String) == 'Delivered'
+                          ? Colors.green
+                          : (order['status'] as String) == 'Shipped'
+                              ? Colors.orange
+                              : Colors.blue,
+                    ),
+                  ),
+                ],
+              ),
+              trailing: Icon(Icons.receipt_long, color: Colors.green),
+            ),
+          );
+        }).toList(),
+      ],
+    ),
+  );
+}
+
+class EcoMartDetailsPage extends StatelessWidget {
+  final List<Map<String, dynamic>> merchants = [
+    {
+      'shopName': 'Green Bites',
+      'certified': true,
+      'rating': 4.8,
+      'products': ['Bamboo Toothbrush', 'Biodegradable Cutlery']
+    },
+    {
+      'shopName': 'Eco Living',
+      'certified': true,
+      'rating': 4.6,
+      'products': ['Reusable Grocery Bags', 'Plant-Based Soap']
+    },
+    {
+      'shopName': 'Earth Essentials',
+      'certified': true,
+      'rating': 4.7,
+      'products': ['Refillable Bottles', 'Organic Cotton Towels']
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('EcoMart Merchants'),
+        backgroundColor: Colors.green,
+      ),
+      body: ListView.builder(
+        padding: EdgeInsets.all(16),
+        itemCount: merchants.length,
+        itemBuilder: (context, index) {
+          final merchant = merchants[index];
+          return Card(
+            margin: EdgeInsets.symmetric(vertical: 8),
+            child: ExpansionTile(
+              leading: Icon(Icons.store, color: Colors.green),
+              title: Text(merchant['shopName'] as String,
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              subtitle: Text(
+                  'Rating: ${merchant['rating']} ${merchant['certified'] ? '• Eco Certified' : ''}'),
+              children: [
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Products:'),
+                      SizedBox(height: 4),
+                      ...(merchant['products'] as List<String>)
+                          .map((product) => Padding(
+                                padding: const EdgeInsets.only(left: 8.0),
+                                child: Text('• $product'),
+                              ))
+                          .toList(),
+                      SizedBox(height: 8),
+                      Align(
+                        alignment: Alignment.bottomRight,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Visiting ${merchant['shopName']}'),
+                              ),
+                            );
+                          },
+                          icon: Icon(Icons.shopping_cart),
+                          label: Text('Shop Now'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green[100],
+                            foregroundColor: Colors.green[800],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+
+Widget financePage(BuildContext context) {
+  return ListView(
+    padding: EdgeInsets.all(16),
+    children: [
+      Text('My Expenses Breakdown',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      SizedBox(height: 12),
+      _expensesBreakdownCard(),
+      SizedBox(height: 24),
+      Text('Investment Statistics',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      _portfolioOverviewCard(context), // Pass context here
+      _individualAssetsCard(context), // Pass context here
+      SizedBox(height: 24),
+      Text('Loan Statistics',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      _loanStatsCard(),
+      _myLoanPathCard(),
+    ],
+  );
+}
+
+Widget _portfolioOverviewCard(BuildContext context) {
+  // Add BuildContext parameter
+  final List<Map<String, String>> topPicks = [
+    {
+      'name': 'SolarGen Inc.',
+      'currentValue': 'RM2,400',
+      'dailyGain': '+RM30',
+      'totalGain': '+RM300',
+    },
+    {
+      'name': 'GreenWave Energy',
+      'currentValue': 'RM2,800',
+      'dailyGain': '+RM20',
+      'totalGain': '+RM400',
+    },
+  ];
+
+  return _infoCard(
+    title: 'Top Picks in Renewable/Sustainability Companies',
+    content: Column(
+      children: topPicks.map<Widget>((company) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        company['name']!,
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                        softWrap: true,
+                      ),
+                      SizedBox(height: 4),
+                      Text('Current Value: ${company['currentValue']}'),
+                      Text(
+                        'Daily Gain/Loss: ${company['dailyGain']}',
+                        style: TextStyle(
+                          color: company['dailyGain']!.startsWith('-')
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                      ),
+                      Text(
+                        'Total Gain/Loss: ${company['totalGain']}',
+                        style: TextStyle(
+                          color: company['totalGain']!.startsWith('-')
+                              ? Colors.red
+                              : Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 16),
+                ElevatedButton(
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Invest in ${company['name']}')),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  ),
+                  child: Text('Invest'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  );
+}
+
+Widget _individualAssetsCard(BuildContext context) {
+  final List<Map<String, String>> individualAssets = [
+    {
+      'name': 'EcoBloom Farms',
+      'amount': 'RM3,200',
+      'return': '+4.2%',
+    },
+    {
+      'name': 'CleanWave Energy',
+      'amount': 'RM2,750',
+      'return': '+5.0%',
+    },
+    {
+      'name': 'GreenPath Solar',
+      'amount': 'RM3,500',
+      'return': '+3.5%',
+    },
+  ];
+
+  return _infoCard(
+    title: 'Individual Assets',
+    content: Column(
+      children: individualAssets.map((asset) {
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8.0),
+          child: Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Asset Info
+                Expanded(
+                  flex: 3,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            asset['name']!,
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(width: 6),
+                          Icon(Icons.star_border, color: Colors.orange),
+                        ],
+                      ),
+                      SizedBox(height: 4),
+                      Text('Amount Invested: ${asset['amount']}'),
+                      Text(
+                        'Return: ${asset['return']}',
+                        style: TextStyle(
+                          color: asset['return']!.startsWith('-') ? Colors.red : Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(width: 16),
+                TextButton.icon(
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text('${asset['name']}'),
+                        content: Text('More info about ${asset['name']}...'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: Text('Close'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  icon: Icon(Icons.info_outline),
+                  label: Text('More Info'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
+    ),
+  );
+}
+
+Widget _loanStatsCard() {
+  return _infoCard(
+    title: 'Loan Overview',
+    content: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Total Loan: RM20,000'),
+        Text('Monthly Payment: RM500'),
+        Text('Interest Rate: 3.5%'),
+      ],
+    ),
+  );
+}
+
+Widget _myLoanPathCard() {
+  return _infoCard(
+    title: 'Loan Repayment Plan',
+    content: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Goal: Repay by June 2026'),
+        Text('Paid so far: RM8,000'),
+        Text('Remaining: RM12,000'),
+      ],
+    ),
+  );
+}
+
+Widget _expensesBreakdownCard() {
+  return Column(
+    children: [
+      _statRow("Food", "RM450", 0.45, Colors.blue),
+      _statRow("Transport", "RM300", 0.30, Colors.green),
+      _statRow("Entertainment", "RM150", 0.15, Colors.orange),
+      _statRow("Others", "RM100", 0.10, Colors.red),
+    ],
+  );
+}
+
+Widget _infoCard({required String title, required Widget content}) {
+  return Container(
+    width: double.infinity,
+    padding: EdgeInsets.all(16),
+    margin: EdgeInsets.symmetric(vertical: 8),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      boxShadow: [BoxShadow(blurRadius: 4, color: Colors.grey.shade300)],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        SizedBox(height: 8),
+        content,
+      ],
+    ),
+  );
+}
+
+Widget _statRow(String category, String amount, double percentage, Color color) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('$category - $amount',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+        SizedBox(height: 4),
+        LinearProgressIndicator(
+          value: percentage,
+          color: color,
+          backgroundColor: color.withOpacity(0.2),
+          minHeight: 8,
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _profileSection() {
+  double progressValue = 0.65;
+  double communityChallengeProgress = 0.3;
+
+  return SingleChildScrollView(
+    child: Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top Section: Profile Pic + Name | ID + Tier
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    radius: 30,
+                    // Replaced AssetImage with NetworkImage as per instructions
+                    backgroundImage: NetworkImage(
+                        'https://www.gstatic.com/flutter-onestack-prototype/genui/example_1.jpg'),
+                  ),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sean',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        'Member since Jul 2025',
+                        style: TextStyle(fontSize: 14, color: Colors.green[700]),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'ID: #A10249',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                  ),
+                  SizedBox(height: 4),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.green[100],
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Tier: Eco Explorer',
+                      style: TextStyle(fontSize: 13, color: Colors.green[800]),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          SizedBox(height: 20),
+
+          // Progress Bar Section
+          Text('Progress to next tier',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+          SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progressValue,
+            minHeight: 8,
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+          ),
+          SizedBox(height: 4),
+          Text('${(progressValue * 100).toInt()}% completed',
+              style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+
+          SizedBox(height: 30),
+
+          // Linked Card
+          GestureDetector(
+            onTap: () {},
+            child: Card(
+              elevation: 3,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.credit_card, size: 30, color: Colors.green[700]),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Linked Card',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text('Visa **** 2049',
+                              style: TextStyle(color: Colors.grey[700])),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          SizedBox(height: 30),
+
+          // Achievement Section
+          Text(
+            'Achievements',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 12),
+
+          // Unlocked Achievements
+          Text('Unlocked',
+              style: TextStyle(fontSize: 14, color: Colors.green[800], fontWeight: FontWeight.w600)),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.emoji_events, color: Colors.orange, size: 28),
+              SizedBox(width: 8),
+              Text('First Investment Made', style: TextStyle(fontSize: 14)),
+            ],
+          ),
+          SizedBox(height: 12),
+
+          // Locked Achievements
+          Text('Locked',
+              style: TextStyle(fontSize: 14, color: Colors.grey[700], fontWeight: FontWeight.w600)),
+          SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.lock_outline, color: Colors.grey, size: 28),
+              SizedBox(width: 8),
+              Text('Invest in 5 Renewable Projects',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+            ],
+          ),
+
+          SizedBox(height: 30),
+
+          // Community Challenge Section
+          Text(
+            'Community Challenge',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Plant 10,000 trees with the community this month',
+            style: TextStyle(fontSize: 14, color: Colors.grey[800]),
+          ),
+          SizedBox(height: 12),
+          LinearProgressIndicator(
+            value: communityChallengeProgress,
+            minHeight: 8,
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.green[700]!),
+          ),
+          SizedBox(height: 4),
+          Text(
+            '${(communityChallengeProgress * 100).toInt()}% completed',
+            style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+          ),
+        ],
+      ),
+    ),
+  );
+}
